@@ -166,6 +166,34 @@ impl AtomicFile {
         self.commit(&tmppath).map_err(Error::Internal)?;
         Ok(rv)
     }
+
+    /// Open a temporary file with custom [`OpenOptions`], call `f` on it (which is supposed to
+    /// write to it), then move the file atomically to `self.path`.
+    ///
+    /// The temporary file is written to a randomized temporary subdirectory with prefix
+    /// `.atomicwrite`.
+    ///
+    /// [`OpenOptions`]: fs::OpenOptions
+    pub async fn write_async_with_options<R>(&self, reader: &mut R, options: fs::OpenOptions) -> Result<u64, Error<()>>
+    where
+        R: tokio::io::AsyncRead + Unpin + ?Sized,
+    {
+        let tmpdir = tempfile::Builder::new()
+            .prefix(".atomicwrite")
+            .tempdir_in(&self.tmpdir)
+            .map_err(Error::Internal)?;
+
+        let tmppath = tmpdir.path().join("tmpfile.tmp");
+        let rv = {
+            let tmpfile = options.open(&tmppath).map_err(Error::Internal)?;
+            let mut tokio_tmpfile = tokio::fs::File::from_std(tmpfile);
+            let r = tokio::io::copy(reader, &mut tokio_tmpfile).await.map_err(Error::Internal)?;
+            tokio_tmpfile.sync_all().await.map_err(Error::Internal)?;
+            r
+        };
+        self.commit(&tmppath).map_err(Error::Internal)?;
+        Ok(rv)
+    }
 }
 
 #[cfg(unix)]

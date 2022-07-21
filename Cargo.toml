@@ -1,11 +1,11 @@
 [package]
 name = "atomicwrites"
-version = "0.3.1"
-
-authors = ["Markus Unterwaditzer <markus-honeypot@unterwaditzer.net>"]
+version = "0.4.0"
+authors = ["Markus Unterwaditzer <markus-honeypot@unterwaditzer.net>", "Etienne Membrives <etienne@membrives.fr>"]
 license = "MIT"
 keywords = ["filesystem", "posix"]
 readme = "README.md"
+edition = "2021"
 
 description = "Atomic file-writes."
 documentation = "https://docs.rs/crate/atomicwrites"
@@ -16,6 +16,7 @@ exclude = ["/.travis.yml", "/Makefile", "/appveyor.yml"]
 
 [dependencies]
 tempfile = "3.1"
+tokio = {version = "1.20", features = ["fs", "io-util"] }
 
 [target.'cfg(unix)'.dependencies]
 rustix = { version = "0.35.6", features = ["fs"] }
